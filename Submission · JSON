@@ -1,0 +1,54 @@
+{
+  "projectName": "Asynchronous Job Processing System",
+  "techStack": {
+    "runtime": "Node.js 18",
+    "framework": "Express.js",
+    "queueLibrary": "BullMQ",
+    "database": "PostgreSQL 13",
+    "cache": "Redis 6",
+    "mailServer": "MailHog"
+  },
+  "services": {
+    "app": {
+      "port": 3000,
+      "healthEndpoint": "/health"
+    },
+    "worker": {
+      "queues": ["high_priority", "default"],
+      "concurrency": {
+        "high_priority": 5,
+        "default": 3
+      }
+    },
+    "db": {
+      "port": 5432,
+      "database": "jobs_db"
+    },
+    "redis": {
+      "port": 6379
+    },
+    "mailhog": {
+      "smtp": 1025,
+      "web": 8025
+    }
+  },
+  "features": {
+    "jobTypes": ["CSV_EXPORT", "EMAIL_SEND"],
+    "priorities": ["high", "default"],
+    "maxRetries": 3,
+    "backoffStrategy": "exponential",
+    "statusTracking": true,
+    "resultStorage": true
+  },
+  "endpoints": {
+    "createJob": "POST /jobs",
+    "getJobStatus": "GET /jobs/:id",
+    "healthCheck": "GET /health"
+  },
+  "setup": {
+    "command": "docker-compose up --build",
+    "environmentFile": ".env.example",
+    "seedDirectory": "./seeds",
+    "outputDirectory": "./output"
+  }
+}

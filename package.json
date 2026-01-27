@@ -1,0 +1,31 @@
+{
+  "name": "async-job-processing-system",
+  "version": "1.0.0",
+  "description": "Asynchronous Job Processing System with Redis and Worker Queues",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:worker": "node src/worker.js",
+    "dev": "nodemon src/index.js",
+    "dev:worker": "nodemon src/worker.js"
+  },
+  "keywords": [
+    "job-queue",
+    "redis",
+    "bullmq",
+    "worker"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bullmq": "^5.1.0",
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "nodemailer": "^6.9.7",
+    "ioredis": "^5.3.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
