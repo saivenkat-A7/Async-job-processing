@@ -2,7 +2,6 @@ const fs = require('fs').promises;
 const path = require('path');
 const nodemailer = require('nodemailer');
 
-// CSV Generation Job Processor
 async function processCSVExport(job) {
   const { jobId, payload } = job.data;
   
@@ -14,16 +13,15 @@ async function processCSVExport(job) {
     throw new Error('Invalid data: expected non-empty array');
   }
 
-  // Extract headers from the first object
   const headers = Object.keys(data[0]);
   
-  // Create CSV content
+
   let csvContent = headers.join(',') + '\n';
   
   for (const row of data) {
     const values = headers.map(header => {
       const value = row[header];
-      // Escape values that contain commas or quotes
+     
       if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
         return `"${value.replace(/"/g, '""')}"`;
       }
@@ -32,7 +30,7 @@ async function processCSVExport(job) {
     csvContent += values.join(',') + '\n';
   }
 
-  // Save CSV file
+  
   const outputDir = '/usr/src/app/output';
   const filename = `${jobId}.csv`;
   const filePath = path.join(outputDir, filename);
@@ -46,7 +44,7 @@ async function processCSVExport(job) {
   };
 }
 
-// Email Sending Job Processor
+
 async function processEmailSend(job) {
   const { jobId, payload } = job.data;
   
@@ -66,7 +64,7 @@ async function processEmailSend(job) {
     ignoreTLS: true,
   });
 
-  // Send email
+
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM || 'noreply@example.com',
     to,
