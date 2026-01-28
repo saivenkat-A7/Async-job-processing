@@ -6,14 +6,14 @@ const { processCSVExport, processEmailSend } = require('./processors');
 
 const MAX_ATTEMPTS = 3;
 
-// Job processor function
+
 async function processJob(job) {
   const { jobId, type, payload } = job.data;
 
   console.log(`[Worker] Processing job ${jobId} (type: ${type}, attempt: ${job.attemptsMade + 1}/${MAX_ATTEMPTS})`);
 
   try {
-    // Update job status to processing
+  
     await db.query(
       `UPDATE jobs 
        SET status = 'processing', 
@@ -25,7 +25,7 @@ async function processJob(job) {
 
     let result;
 
-    // Process based on job type
+   
     switch (type) {
       case 'CSV_EXPORT':
         result = await processCSVExport(job);
@@ -37,7 +37,7 @@ async function processJob(job) {
         throw new Error(`Unknown job type: ${type}`);
     }
 
-    // Update job status to completed
+  
     await db.query(
       `UPDATE jobs 
        SET status = 'completed', 
@@ -52,11 +52,11 @@ async function processJob(job) {
   } catch (error) {
     console.error(`[Worker] Job ${jobId} failed:`, error.message);
 
-    // Check if we've exhausted all attempts
+   
     const currentAttempt = job.attemptsMade + 1;
     
     if (currentAttempt >= MAX_ATTEMPTS) {
-      // Mark as permanently failed
+      
       await db.query(
         `UPDATE jobs 
          SET status = 'failed', 
@@ -67,7 +67,7 @@ async function processJob(job) {
       );
       console.log(`[Worker] Job ${jobId} permanently failed after ${MAX_ATTEMPTS} attempts`);
     } else {
-      // Update attempts count but keep status for retry
+     
       await db.query(
         `UPDATE jobs 
          SET attempts = $1,
@@ -105,7 +105,7 @@ const defaultWorker = new Worker('default', processJob, {
   },
 });
 
-// Worker event handlers
+
 highPriorityWorker.on('ready', () => {
   console.log('[High Priority] Worker ready and listening for jobs');
 });
