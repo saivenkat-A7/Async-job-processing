@@ -8,12 +8,11 @@ const PORT = process.env.API_PORT || 3000;
 
 app.use(express.json());
 
-// Health check endpoint
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Create a new job
 app.post('/jobs', async (req, res) => {
   try {
     const { type, priority = 'default', payload } = req.body;
@@ -23,12 +22,12 @@ app.post('/jobs', async (req, res) => {
       return res.status(400).json({ error: 'type and payload are required' });
     }
 
-    // Validate priority
+    
     if (priority !== 'default' && priority !== 'high') {
       return res.status(400).json({ error: 'priority must be "default" or "high"' });
     }
 
-    // Create job record in database
+   
     const result = await db.query(
       `INSERT INTO jobs (type, priority, payload, status, attempts)
        VALUES ($1, $2, $3, 'pending', 0)
@@ -38,7 +37,7 @@ app.post('/jobs', async (req, res) => {
 
     const jobId = result.rows[0].id;
 
-    // Add job to appropriate queue
+   
     const queue = priority === 'high' ? highPriorityQueue : defaultQueue;
     await queue.add(type, {
       jobId,
@@ -63,7 +62,6 @@ app.post('/jobs', async (req, res) => {
   }
 });
 
-// Get job status
 app.get('/jobs/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -98,12 +96,11 @@ app.get('/jobs/:id', async (req, res) => {
   }
 });
 
-// Start server
+
 app.listen(PORT, () => {
   console.log(`API server listening on port ${PORT}`);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing server...');
   await db.end();
