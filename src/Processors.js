@@ -61,7 +61,7 @@ async function processEmailSend(job) {
   // Create SMTP transporter
   const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST || 'mailhog',
-    port: parseInt(process.env.MAIL_PORT || '1025'),
+    port: parseInt(process.env.MAIL_PORT || '8025'),
     secure: false,
     ignoreTLS: true,
   });

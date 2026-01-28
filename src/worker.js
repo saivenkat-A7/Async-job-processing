@@ -83,6 +83,8 @@ async function processJob(job) {
 }
 
 // Create workers for both queues
+console.log('Initializing workers...');
+
 // High priority queue worker
 const highPriorityWorker = new Worker('high_priority', processJob, {
   connection,
@@ -91,16 +93,9 @@ const highPriorityWorker = new Worker('high_priority', processJob, {
     max: 10,
     duration: 1000,
   },
-  settings: {
-    backoffStrategy: (attemptsMade) => {
-      // Exponential backoff: 1s, 2s, 4s
-      return Math.min(Math.pow(2, attemptsMade) * 1000, 10000);
-    },
-  },
-  autorun: false,
 });
 
-// Default queue worker
+// Default queue worker  
 const defaultWorker = new Worker('default', processJob, {
   connection,
   concurrency: 3,
@@ -108,21 +103,27 @@ const defaultWorker = new Worker('default', processJob, {
     max: 5,
     duration: 1000,
   },
-  settings: {
-    backoffStrategy: (attemptsMade) => {
-      return Math.min(Math.pow(2, attemptsMade) * 1000, 10000);
-    },
-  },
-  autorun: false,
 });
 
 // Worker event handlers
+highPriorityWorker.on('ready', () => {
+  console.log('[High Priority] Worker ready and listening for jobs');
+});
+
 highPriorityWorker.on('completed', (job) => {
   console.log(`[High Priority] Job ${job.data.jobId} completed`);
 });
 
 highPriorityWorker.on('failed', (job, err) => {
   console.log(`[High Priority] Job ${job?.data?.jobId} failed: ${err.message}`);
+});
+
+highPriorityWorker.on('error', (err) => {
+  console.error('[High Priority] Worker error:', err);
+});
+
+defaultWorker.on('ready', () => {
+  console.log('[Default] Worker ready and listening for jobs');
 });
 
 defaultWorker.on('completed', (job) => {
@@ -133,36 +134,13 @@ defaultWorker.on('failed', (job, err) => {
   console.log(`[Default] Job ${job?.data?.jobId} failed: ${err.message}`);
 });
 
-// Configure retry settings
-const retryConfig = {
-  attempts: MAX_ATTEMPTS,
-  backoff: {
-    type: 'exponential',
-    delay: 1000,
-  },
-};
-
-// Apply retry config by overriding the default job options
-highPriorityWorker.opts = { ...highPriorityWorker.opts, ...retryConfig };
-defaultWorker.opts = { ...defaultWorker.opts, ...retryConfig };
-
-// Start workers
-async function startWorkers() {
-  console.log('Starting workers...');
-  
-  // Start high priority worker first to ensure it processes first
-  await highPriorityWorker.run();
-  await defaultWorker.run();
-  
-  console.log('Workers started successfully');
-  console.log('- High priority queue: listening');
-  console.log('- Default queue: listening');
-}
-
-startWorkers().catch((error) => {
-  console.error('Failed to start workers:', error);
-  process.exit(1);
+defaultWorker.on('error', (err) => {
+  console.error('[Default] Worker error:', err);
 });
+
+console.log('Workers initialized successfully');
+console.log('- High priority queue: listening');
+console.log('- Default queue: listening');
 
 // Graceful shutdown
 async function shutdown() {

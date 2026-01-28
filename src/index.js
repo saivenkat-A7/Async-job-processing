@@ -48,8 +48,14 @@ app.post('/jobs', async (req, res) => {
       jobId: jobId,
       removeOnComplete: false,
       removeOnFail: false,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000,
+      },
     });
 
+    console.log(`[API] Job created: ${jobId} (type: ${type}, priority: ${priority})`);
     res.status(201).json({ jobId });
   } catch (error) {
     console.error('Error creating job:', error);
