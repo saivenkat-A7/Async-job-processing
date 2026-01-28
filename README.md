@@ -2,7 +2,7 @@
 
 A scalable backend system for processing long-running tasks asynchronously using Redis, BullMQ, and PostgreSQL. This system demonstrates modern architectural patterns for handling background jobs with features like priority queues, automatic retries, and status tracking.
 
-## 🏗️ Architecture
+##  Architecture
 
 The system consists of five main components:
 
@@ -12,20 +12,20 @@ The system consists of five main components:
 4. **Redis** - Message broker for job queuing
 5. **MailHog** - Mock SMTP server for testing email functionality
 
-## ✨ Features
+##  Features
 
-- ✅ Asynchronous job processing with BullMQ
-- ✅ Priority queues (high and default)
-- ✅ Automatic retry mechanism (up to 3 attempts)
-- ✅ Job status tracking (pending → processing → completed/failed)
-- ✅ CSV report generation
-- ✅ Email sending capabilities
-- ✅ Fully containerized with Docker
-- ✅ Automatic database seeding
-- ✅ Health checks for all services
-- ✅ Graceful shutdown handling
+-  Asynchronous job processing with BullMQ
+-  Priority queues (high and default)
+-  Automatic retry mechanism (up to 3 attempts)
+-  Job status tracking (pending → processing → completed/failed)
+-  CSV report generation
+-  Email sending capabilities
+-  Fully containerized with Docker
+-  Automatic database seeding
+-  Health checks for all services
+-  Graceful shutdown handling
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -69,7 +69,7 @@ http://localhost:8025
 curl http://localhost:3000/health
 ```
 
-## 📋 API Documentation
+##  API Documentation
 
 ### Create a Job
 
@@ -117,7 +117,7 @@ curl http://localhost:3000/health
 }
 ```
 
-## 🎯 Job Types
+##  Job Types
 
 ### 1. CSV Export Job
 
@@ -168,14 +168,14 @@ Sends an email via the mock SMTP server.
 
 Emails can be viewed in the MailHog UI at `http://localhost:8025`.
 
-## 🔄 Job Lifecycle
+##  Job Lifecycle
 
 1. **pending** - Job created and added to queue
 2. **processing** - Worker has picked up the job
 3. **completed** - Job finished successfully
 4. **failed** - Job failed after 3 retry attempts
 
-## ⚙️ Configuration
+##  Configuration
 
 All configuration is managed through environment variables. See `.env.example` for available options:
 
@@ -263,37 +263,8 @@ curl -X POST http://localhost:3000/jobs \
 
 Monitor the job status and watch attempts increment up to 3.
 
-## 📁 Project Structure
 
-```
-.
-├── docker-compose.yml      # Service orchestration
-├── Dockerfile             # Application container definition
-├── .env.example          # Environment variables template
-├── package.json          # Node.js dependencies
-├── seeds/
-│   └── 01-init.sql      # Database schema initialization
-├── output/              # Generated files (CSV reports)
-└── src/
-    ├── index.js         # API server
-    ├── worker.js        # Background job processor
-    ├── db.js            # Database connection
-    ├── queue.js         # BullMQ queue configuration
-    └── processors.js    # Job type implementations
-```
 
-## 🛠️ Development
-
-### View Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f worker
-docker-compose logs -f app
-```
 
 ### Access Database
 
@@ -313,26 +284,10 @@ docker-compose exec redis redis-cli
 KEYS *
 ```
 
-### Restart Services
 
-```bash
-# Restart all
-docker-compose restart
 
-# Restart specific service
-docker-compose restart worker
-```
 
-### Stop Services
-
-```bash
-docker-compose down
-
-# Remove volumes as well
-docker-compose down -v
-```
-
-## 🏆 Key Features Explained
+##  Key Features Explained
 
 ### Priority Queues
 
@@ -366,46 +321,3 @@ Both API and worker services handle SIGTERM/SIGINT signals:
 - Database connections are properly closed
 - No jobs are lost during shutdown
 
-## 🔒 Production Considerations
-
-This is a development/demonstration setup. For production:
-
-1. Use secrets management (not .env files)
-2. Add authentication to the API
-3. Implement rate limiting
-4. Add monitoring and alerting
-5. Use managed Redis and PostgreSQL services
-6. Implement dead letter queues
-7. Add job result expiration
-8. Scale workers horizontally
-9. Add comprehensive logging
-10. Implement job prioritization weights
-
-## 📝 License
-
-ISC
-
-## 👥 Contributing
-
-This is a demonstration project. Feel free to fork and modify for your own use.
-
-## 🐛 Troubleshooting
-
-### Services won't start
-- Ensure ports 3000, 5432, 6379, 1025, and 8025 are not in use
-- Check Docker daemon is running
-- Review logs: `docker-compose logs`
-
-### Database connection errors
-- Wait for health checks to pass (up to 3 minutes)
-- Verify DATABASE_URL is correct in .env
-
-### Jobs not processing
-- Check worker logs: `docker-compose logs worker`
-- Verify Redis connection: `docker-compose exec redis redis-cli ping`
-- Check job status in database
-
-### Output files not appearing
-- Ensure ./output directory exists and has write permissions
-- Check worker logs for errors
-- Verify volume mount in docker-compose.yml
