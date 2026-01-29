@@ -25,67 +25,38 @@ A scalable backend system for processing long-running tasks asynchronously using
 │  │  GET /health        │                                      │
 │  └─────┬───┬───────────┘                                      │
 │        │   │                                                   │
-│        │   │                                                   │
 │        │   └────────────┐                                     │
 │        │                │                                     │
 │        ▼                ▼                                     │
 │  ┌──────────┐    ┌──────────────┐                           │
-│  │          │    │              │                           │
 │  │   Redis  │    │  PostgreSQL  │                           │
 │  │  (Queue) │    │  (Database)  │                           │
 │  │          │    │              │                           │
 │  │ Queues:  │    │ Table: jobs  │                           │
-│  │ • high_  │    │              │                           │
-│  │   priority│    │ Columns:     │                           │
-│  │ • default │    │ • id         │                           │
-│  │          │    │ • type       │                           │
-│  │          │    │ • status     │                           │
+│  │ • high_  │    │ • id         │                           │
+│  │   priority│    │ • type       │                           │
+│  │ • default │    │ • status     │                           │
 │  │          │    │ • payload    │                           │
 │  │          │    │ • result     │                           │
-│  │          │    │ • attempts   │                           │
 │  └────▲─────┘    └──────▲───────┘                           │
 │       │                 │                                    │
-│       │                 │                                    │
 │  ┌────┴─────────────────┴────────┐                          │
-│  │                               │                          │
 │  │      Worker Service           │                          │
-│  │      (Background Jobs)        │                          │
+│  │   (Background Jobs)           │                          │
 │  │                               │                          │
-│  │  ┌─────────────────────┐      │                          │
-│  │  │ Job Processors:     │      │                          │
-│  │  │                     │      │                          │
-│  │  │ • CSV_EXPORT        │──────┼──┐                      │
-│  │  │   - Generate CSV    │      │  │                      │
-│  │  │   - Save to output/ │      │  │                      │
-│  │  │                     │      │  │                      │
-│  │  │ • EMAIL_SEND        │──────┼──┼──┐                   │
-│  │  │   - Send via SMTP   │      │  │  │                   │
-│  │  │   - Log messageId   │      │  │  │                   │
-│  │  └─────────────────────┘      │  │  │                   │
-│  │                               │  │  │                   │
-│  │  Features:                    │  │  │                   │
-│  │  • Priority handling          │  │  │                   │
-│  │  • Auto retry (3x)            │  │  │                   │
-│  │  • Status tracking            │  │  │                   │
-│  │  • Graceful shutdown          │  │  │                   │
-│  └───────────────────────────────┘  │  │                   │
-│                                      │  │                   │
-│                                      ▼  ▼                   │
-│                              ┌──────────────┐               │
-│                              │    Output    │               │
-│                              │   Volume     │               │
-│                              │  ./output/   │               │
-│                              │              │               │
-│                              │ CSV Files    │               │
-│                              └──────────────┘               │
-│                                      │                      │
-│                                      ▼                      │
-│                              ┌──────────────┐               │
-│                              │   MailHog    │               │
-│                              │  SMTP Server │               │
-│                              │  Port: 1025  │               │
-│                              └──────────────┘               │
-│                                                              │
+│  │  • CSV_EXPORT                 │                          │
+│  │  • EMAIL_SEND                 │                          │
+│  │  • Priority handling          │                          │
+│  │  • Auto retry (3x)            │                          │
+│  │  • Status tracking            │                          │
+│  └───────────────┬───────────────┘                          │
+│                  │                                           │
+│                  ▼                                           │
+│          ┌──────────────┐                                    │
+│          │    Output    │                                    │
+│          │   ./output/  │                                    │
+│          │  (CSV Files) │                                    │
+│          └──────────────┘                                    │
 └──────────────────────────────────────────────────────────────┘
 
 The system consists of five main components:
