@@ -4,6 +4,90 @@ A scalable backend system for processing long-running tasks asynchronously using
 
 ##  Architecture
 
+
+┌─────────────────────────────────────────────────────────────────┐
+│                        Docker Network                            │
+│                                                                  │
+│  ┌──────────────┐         ┌──────────────┐                     │
+│  │   Client     │         │   Client     │                     │
+│  │  (curl/API)  │         │  (Browser)   │                     │
+│  └──────┬───────┘         └──────┬───────┘                     │
+│         │                        │                              │
+│         │ HTTP                   │ HTTP                         │
+│         ▼                        ▼                              │
+│  ┌─────────────────────┐ ┌──────────────┐                     │
+│  │    API Service      │ │   MailHog    │                     │
+│  │   (Express.js)      │ │   Web UI     │                     │
+│  │   Port: 3000        │ │  Port: 8025  │                     │
+│  │                     │ │              │                     │
+│  │  POST /jobs         │ └──────────────┘                     │
+│  │  GET /jobs/:id      │                                      │
+│  │  GET /health        │                                      │
+│  └─────┬───┬───────────┘                                      │
+│        │   │                                                   │
+│        │   │                                                   │
+│        │   └────────────┐                                     │
+│        │                │                                     │
+│        ▼                ▼                                     │
+│  ┌──────────┐    ┌──────────────┐                           │
+│  │          │    │              │                           │
+│  │   Redis  │    │  PostgreSQL  │                           │
+│  │  (Queue) │    │  (Database)  │                           │
+│  │          │    │              │                           │
+│  │ Queues:  │    │ Table: jobs  │                           │
+│  │ • high_  │    │              │                           │
+│  │   priority│    │ Columns:     │                           │
+│  │ • default │    │ • id         │                           │
+│  │          │    │ • type       │                           │
+│  │          │    │ • status     │                           │
+│  │          │    │ • payload    │                           │
+│  │          │    │ • result     │                           │
+│  │          │    │ • attempts   │                           │
+│  └────▲─────┘    └──────▲───────┘                           │
+│       │                 │                                    │
+│       │                 │                                    │
+│  ┌────┴─────────────────┴────────┐                          │
+│  │                               │                          │
+│  │      Worker Service           │                          │
+│  │      (Background Jobs)        │                          │
+│  │                               │                          │
+│  │  ┌─────────────────────┐      │                          │
+│  │  │ Job Processors:     │      │                          │
+│  │  │                     │      │                          │
+│  │  │ • CSV_EXPORT        │──────┼──┐                      │
+│  │  │   - Generate CSV    │      │  │                      │
+│  │  │   - Save to output/ │      │  │                      │
+│  │  │                     │      │  │                      │
+│  │  │ • EMAIL_SEND        │──────┼──┼──┐                   │
+│  │  │   - Send via SMTP   │      │  │  │                   │
+│  │  │   - Log messageId   │      │  │  │                   │
+│  │  └─────────────────────┘      │  │  │                   │
+│  │                               │  │  │                   │
+│  │  Features:                    │  │  │                   │
+│  │  • Priority handling          │  │  │                   │
+│  │  • Auto retry (3x)            │  │  │                   │
+│  │  • Status tracking            │  │  │                   │
+│  │  • Graceful shutdown          │  │  │                   │
+│  └───────────────────────────────┘  │  │                   │
+│                                      │  │                   │
+│                                      ▼  ▼                   │
+│                              ┌──────────────┐               │
+│                              │    Output    │               │
+│                              │   Volume     │               │
+│                              │  ./output/   │               │
+│                              │              │               │
+│                              │ CSV Files    │               │
+│                              └──────────────┘               │
+│                                      │                      │
+│                                      ▼                      │
+│                              ┌──────────────┐               │
+│                              │   MailHog    │               │
+│                              │  SMTP Server │               │
+│                              │  Port: 1025  │               │
+│                              └──────────────┘               │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
 The system consists of five main components:
 
 1. **API Service** - Express.js REST API for job creation and status queries
@@ -11,6 +95,38 @@ The system consists of five main components:
 3. **PostgreSQL Database** - Stores job metadata and results
 4. **Redis** - Message broker for job queuing
 5. **MailHog** - Mock SMTP server for testing email functionality
+
+## Data Flow
+### Job Creation Flow
+```
+1. Client → POST /jobs → API Service
+2. API Service → Insert job record → PostgreSQL (status: pending)
+3. API Service → Enqueue job → Redis (high_priority or default queue)
+4. API Service → Return jobId → Client
+
+```
+### Job Processing Flow
+```
+1. Worker → Poll queue → Redis (check high_priority first, then default)
+2. Worker → Update status → PostgreSQL (status: processing)
+3. Worker → Process job → Execute CSV_EXPORT or EMAIL_SEND
+4. Worker → Store result → PostgreSQL (status: completed, result: {...})
+   OR
+   Worker → Handle failure → PostgreSQL (status: failed, error: "...")
+
+```
+### Job Retry Flow
+
+```
+1. Job fails → Worker catches error
+2. Worker → Check attempts < 3
+3. If attempts < 3:
+   - Worker → Increment attempts → PostgreSQL
+   - BullMQ → Re-enqueue job with backoff
+4. If attempts >= 3:
+   - Worker → Update status → PostgreSQL (status: failed)
+```
+
 
 ##  Features
 
