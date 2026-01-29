@@ -5,60 +5,6 @@ A scalable backend system for processing long-running tasks asynchronously using
 ##  Architecture
 
 
-┌─────────────────────────────────────────────────────────────────┐
-│                        Docker Network                            │
-│                                                                  │
-│  ┌──────────────┐         ┌──────────────┐                     │
-│  │   Client     │         │   Client     │                     │
-│  │  (curl/API)  │         │  (Browser)   │                     │
-│  └──────┬───────┘         └──────┬───────┘                     │
-│         │                        │                              │
-│         │ HTTP                   │ HTTP                         │
-│         ▼                        ▼                              │
-│  ┌─────────────────────┐ ┌──────────────┐                     │
-│  │    API Service      │ │   MailHog    │                     │
-│  │   (Express.js)      │ │   Web UI     │                     │
-│  │   Port: 3000        │ │  Port: 8025  │                     │
-│  │                     │ │              │                     │
-│  │  POST /jobs         │ └──────────────┘                     │
-│  │  GET /jobs/:id      │                                      │
-│  │  GET /health        │                                      │
-│  └─────┬───┬───────────┘                                      │
-│        │   │                                                   │
-│        │   └────────────┐                                     │
-│        │                │                                     │
-│        ▼                ▼                                     │
-│  ┌──────────┐    ┌──────────────┐                           │
-│  │   Redis  │    │  PostgreSQL  │                           │
-│  │  (Queue) │    │  (Database)  │                           │
-│  │          │    │              │                           │
-│  │ Queues:  │    │ Table: jobs  │                           │
-│  │ • high_  │    │ • id         │                           │
-│  │   priority│    │ • type       │                           │
-│  │ • default │    │ • status     │                           │
-│  │          │    │ • payload    │                           │
-│  │          │    │ • result     │                           │
-│  └────▲─────┘    └──────▲───────┘                           │
-│       │                 │                                    │
-│  ┌────┴─────────────────┴────────┐                          │
-│  │      Worker Service           │                          │
-│  │   (Background Jobs)           │                          │
-│  │                               │                          │
-│  │  • CSV_EXPORT                 │                          │
-│  │  • EMAIL_SEND                 │                          │
-│  │  • Priority handling          │                          │
-│  │  • Auto retry (3x)            │                          │
-│  │  • Status tracking            │                          │
-│  └───────────────┬───────────────┘                          │
-│                  │                                           │
-│                  ▼                                           │
-│          ┌──────────────┐                                    │
-│          │    Output    │                                    │
-│          │   ./output/  │                                    │
-│          │  (CSV Files) │                                    │
-│          └──────────────┘                                    │
-└──────────────────────────────────────────────────────────────┘
-
 The system consists of five main components:
 
 1. **API Service** - Express.js REST API for job creation and status queries
